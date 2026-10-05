@@ -1,0 +1,33 @@
+name: Update README activity
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+  pull-requests: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate activity section
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/update-readme-activity.mjs
+      - name: Commit refreshed README when changed
+        run: |
+          git diff --quiet -- README.md || {
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git commit -m "docs: refresh repository activity [skip ci]"
+            git push
+          }
