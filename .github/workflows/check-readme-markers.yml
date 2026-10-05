@@ -1,0 +1,20 @@
+name: Check README markers
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  markers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify protected activity markers
+        shell: bash
+        run: |
+          grep -Fq '<!-- ACTIVITY:START -->' README.md
+          grep -Fq '<!-- ACTIVITY:END -->' README.md

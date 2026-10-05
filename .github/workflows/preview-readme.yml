@@ -1,0 +1,39 @@
+name: Preview README activity
+
+on:
+  pull_request:
+    paths:
+      - README.md
+      - scripts/update-readme-activity.mjs
+      - .github/workflows/preview-readme.yml
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: write
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate preview without committing
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/update-readme-activity.mjs
+      - name: Comment generated diff
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execFileSync } = require('child_process');
+            const diff = execFileSync('git', ['diff', '--', 'README.md'], { encoding: 'utf8' });
+            const body = diff
+              ? `## README automation preview\n\n\`\`\`diff\n${diff.slice(0, 60000)}\n\`\`\``
+              : '## README automation preview\n\nNo generated README changes.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, body,
+            });
